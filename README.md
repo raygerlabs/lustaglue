@@ -1,6 +1,24 @@
 # glue
 
-An extension plugin for Lustache in order to enable formatters in mustache expressions such as {{ variable | filter1 | filter2 | ... | filterN }}
+An extension plugin for Lustache in order to enable filters in mustache expressions.
+
+### Filters
+
+A filter is such an expression that alters the output of the rendering function. A filter can defined using the following syntax:
+```
+{{ variable | filter }}
+
+```
+
+A filter can be applied on the result of another filter such as:
+```
+{{ variable | filter1 | filter2 | ... | filterN }}
+```
+
+A filter may have parameters. The syntax:
+```
+{{ variable | filter : param1 : param2 : ... : paramN }}
+```
 
 ### Usage
 
@@ -33,22 +51,4 @@ lustache:render("{{ name | upper }}", { name = "john doe"})
 The result:
 ```
 JOHN DOE
-```
-
-### Filters
-
-A filter is such an expression that alters the output of the rendering function. A filter can defined using the following syntax:
-```
-{{ variable | filter }}
-
-```
-
-A filter can be applied on the result of another filter such like this:
-```
-{{ variable | filter1 | filter2 | ... | filterN }}
-```
-
-A filter may have parameters. The syntax:
-```
-{{ variable | filter : param1 : param2 : ... : paramN }}
 ```
