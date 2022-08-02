@@ -7,8 +7,8 @@ describe("glue extension plugin", function()
   local lustache, glue, template, formatters, view, partials, expected
   setup(function()
     formatters = {
-      upper = (function(s) return string.upper(s) end),
       lower = (function(s) return string.lower(s) end),
+      upper = (function(s) return string.upper(s) end),
       wrap = (function(s, fst, lst) return fst..s..lst end),
     }
     lustache = require("lustache")
@@ -32,7 +32,7 @@ describe("glue extension plugin", function()
     --
     template = "{{ user | upper }}"
     view = { user = "john" }
-    expected = string.upper(view.user)
+    expected = formatters["upper"](view.user)
     --
     assert.same(expected, lustache:render(template, view, partials))
   end)
@@ -41,7 +41,17 @@ describe("glue extension plugin", function()
     --
     template = "{{ user | upper | lower}}"
     view = { user = "john" }
-    expected = string.lower(view.user)
+    expected = formatters["upper"](view.user)
+    expected = formatters["lower"](expected)
+    --
+    assert.same(expected, lustache:render(template, view, partials))
+  end)
+  it("shall execute a formatter string with parameters", function()
+    --
+    --
+    template = "{{ user | wrap : 'hello, ' : ', how are you?' }}"
+    view = { user = "john" }
+    expected = formatters["wrap"](view.user, "hello, ", ", how are you?")
     --
     assert.same(expected, lustache:render(template, view, partials))
   end)
