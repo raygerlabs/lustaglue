@@ -1,0 +1,9 @@
+return {
+  _all = {
+    coverage = true
+  },
+  default = {
+    verbose = true,
+    lpath = "./src/?.lua;./src/?/glue.lua"
+  }
+}
