@@ -55,4 +55,13 @@ describe("glue extension plugin", function()
     --
     assert.same(expected, lustache:render(template, view, partials))
   end)
+  it("shall execute a formatter string with parameters", function()
+    --
+    --
+    template = "{{ user | wrap : 'hello, ' : ', how are you?' }}"
+    view = { user = "john" }
+    expected = formatters["wrap"](view.user, "hello, ", ", how are you?")
+    --
+    assert.same(expected, lustache:render(template, view, partials))
+  end)
 end)
