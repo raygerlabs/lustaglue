@@ -21,10 +21,12 @@ jobs:
       run: |
         luarocks install busted
         luarocks install luacov
+        luarocks install luacov-reporter-lcov
         luarocks install lustache
     - name: Test
       run: |
-        busted spec/glu_spec.lua
+        busted
+        luacov -r lcov
     - name: Report to Coveralls
       uses: coverallsapp/github-action@v1.1.2
       with:
