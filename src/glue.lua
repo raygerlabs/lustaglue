@@ -1,83 +1,77 @@
 -- file: glue.lua
 --
-
+--local context = require("lustache.context")
 --
--- Remove spaces from string
+-- Remove the trailing spaces from the specified string
 --
-function string.trim(s)
-  return s:match'^()%s*$' and '' or s:match'^%s*(.*%S)'
+string.trim = function(s)
+  return s:match('^%s*(.*%S)') or ''
 end
-
+--
+-- Define glue module
+--
 local glue = {formatters={}}
-
 --
--- Processes the formatter param to compatible format
+-- Process the current parameter in the filter expression:
+-- {{ value | filter : param1 : param2 : param3 }}
 --
-local function process_param(param)
-  if type(param) == "string" then
-    -- Remove quotes from before and after
-    param = param:gsub("^[\'\"](.*)[\'\"]$", "%1")
+function glue:parse_param(param, context)
+  local stringExp = "^[\'\"](.*)[\'\"]$"
+  local numericExp = "^[+-]?%d+$"
+  local decimalExp = "^[+-]?%d%.%d+$"
+  if param:match(stringExp) then -- remove single and double quotes around the string
+    return param:gsub(stringExp, "%1")
   end
-  return param
+  if param:match(numericExp) then -- Q: since lua 5.3
+    return math.tointeger(param)
+  end
+  if param:match(decimalExp) then -- all numbers are decimals in Lua
+    return tonumber(param)
+  end
+  return context:lookup(param) -- then it's an expression
 end
 --
 -- Resolves a single filter# in a mustache expression:
 -- {{ value | filter1 | filter2 | .. | filterN }}
 --
-function glue:apply_filter(expression, filter, lookup)
-  -- Push the first element (the filter expression) in the list
-  local params = {expression}
-  
-  -- Split the expression to parameters
-  local elems = string.split(filter, ":")
-  
-  -- Get the filter name (it is always the first one in the expression)
-  local filter_name = string.trim(table.remove(elems, 1))
-  
-  -- Process the parameter list of the formatter function:
-  for _, elem in ipairs(elems) do
-    elem = string.trim(elem)
-    elem = process_param(elem)
-    table.insert(params, elem)
+function glue:exec_filter(expression, filter, context)
+  local call_list = {expression}
+  local param_list = string.split(filter, ":")
+  local filter_name = string.trim(table.remove(param_list, 1)) -- The first element in the table is always the filter name itself
+  for _, param in ipairs(param_list) do
+    param = string.trim(param)
+    param = self:parse_param(param, context)
+    table.insert(call_list, param)
   end
-  
-  -- Call the formatter function if present in the table
-  if glue.formatters ~= nil and glue.formatters[filter_name] ~= nil then
-    filter = glue.formatters[filter_name]
-    expression = filter(table.unpack(params))
+  if self.formatters[filter_name] ~= nil then -- Call the formatter functions in the table
+    filter = self.formatters[filter_name]
+    expression = filter(table.unpack(call_list))
   end
-  
   return expression
 end
-
 --
--- Constructs the new glue plugin.
+-- Override lookup function in the context
+--
+local context = require "lustache.context"
+local _lookup = context.lookup
+function context.lookup(self, name)
+  local formatters = string.split(name, "|")
+  local expression = table.remove(formatters, 1)  -- The first element in the table is always the mustache variable itself
+  expression = string.trim(expression)
+  expression = _lookup(self, expression) -- Calling lookup function from the context
+  for _, formatter in ipairs(formatters) do
+    expression = glue:exec_filter(expression, formatter, self)
+  end
+  return expression
+end
+--
+-- Construct the glue plugin.
 --
 function glue:new(formatters)
   local instance = {}
   setmetatable(instance, {__index=self})
   self.formatters = formatters
   return instance
-end
-
---
--- Overrides the default context lookup function.
---
-local context = require("lustache.context")
-local _lookup = context.lookup
-context.lookup = function(self, name)
-  -- split formatters
-  local formatters = string.split(name, "|")
-  -- get the value
-  local expression = table.remove(formatters, 1)
-  expression = string.trim(expression)
-  -- execute the original lookup function
-  expression = _lookup(self, expression)
-  -- resolving formatters...
-  for _, formatter in ipairs(formatters) do
-    expression = glue:apply_filter(expression, formatter, context.lookup)
-  end
-  return expression
 end
 --
 return glue
