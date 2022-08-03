@@ -7,7 +7,6 @@ An extension plugin for Lustache in order to enable filters in mustache expressi
 A filter is such an expression that alters the output of the rendering function. A filter can defined using the following syntax:
 ```
 {{ variable | filter }}
-
 ```
 
 A filter can be applied on the result of another filter such as:
@@ -25,36 +24,39 @@ A filter may have parameters. The syntax:
 ```
 local lustache = require "lustache"
 local filter_functions = { ... }
-local glue = require("glue"):new(filter_functions)
+local glu = require("glu"):new(filter_functions)
 lustache:render(...)
 ```
 
-### Example
-
-#### Regular Example
+### Examples
 
 First, define some filter functions:
 
 ```
 local filter_functions = {
+
   date=(function(dt)
     return os.date("%Y-%m-%d", dt.year, dt.month, dt.day)
   end),
+
   lower = (function(s)
     return string.lower(s)
   end),
+
   lpad=(function(str, len, delim)
     if delim == nil then delim = ' ' end
     return str .. string.rep(delim, len - #str)
   end),
+
   upper = (function(s)
     return string.upper(s)
   end),
+
   wrap = (function(s, fst, lst)
     return fst..s..lst
   end),
 }
-local glue = require("glue"):new(filter_functions)
+local glu = require("glu"):new(filter_functions)
 ```
 
 Then create a template and a view:
@@ -82,13 +84,16 @@ JOHN DOE
 1970-10-11
 0000001234
 ```
-#### Chaining
+#### Filter chaining
 
 We have the following filters and a view:
 ```
 local filter_functions = {
-  add=(function(a, b) return a + b end),
+  add=(function(a, b)
+    return a + b
+  end) 
 }
+
 local view = {
   zero = 0,
   one = 1
@@ -108,7 +113,7 @@ And the result will be:
 4.14
 ```
 
-#### Strings
+#### Text formatting filters
 
 We have the following view:
 ```
@@ -121,9 +126,10 @@ local view = {
 and filters:
 ```
 local filter_functions = {
-  concat=(function(a, b) return a..b end),
+  concat=(function(a, b)
+    return a..b
+  end)
 }
-
 ```
 
 If we provide the following template:
@@ -132,7 +138,6 @@ If we provide the following template:
 {{ first_name | concat: \"ny\" }}
 {{ first_name | add: ' \"Junior\" ' | add: last_name }}
 {{ first_name | add: \" 'Junior\' \" | add: last_name }}
-
 ```
 
 The result will be:
