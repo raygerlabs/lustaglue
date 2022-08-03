@@ -11,12 +11,11 @@ description = {
 }
 dependencies = {
   "lua >= 5.1",
-  "lustache",
-  "busted"
+  "lustache"
 }
 build = {
   type = "builtin",
   modules = {
-    ["glu"] = "src/glu.lua"
+    glu = "src/glu.lua"
   }
 }
