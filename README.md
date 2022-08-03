@@ -1,3 +1,7 @@
+[![build](https://github.com/raygerlabs/glu/actions/workflows/build.yaml/badge.svg)](https://github.com/raygerlabs/glu/actions/workflows/build.yaml)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
+[![coverage](https://coveralls.io/repos/github/raygerlabs/glu/badge.svg)](https://coveralls.io/github/raygerlabs/glu)
+
 # glu
 
 An extension plugin for Lustache in order to enable filters in mustache expressions.
