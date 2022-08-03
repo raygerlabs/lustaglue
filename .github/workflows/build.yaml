@@ -21,6 +21,7 @@ jobs:
       run: |
         luarocks install busted
         luarocks install luacov
+        luarocks install lustache
     - name: Test
       run: |
         busted spec/glu_spec.lua
