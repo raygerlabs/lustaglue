@@ -24,31 +24,121 @@ A filter may have parameters. The syntax:
 
 ```
 local lustache = require "lustache"
-local glue = require "glue"
-local formatters = { ... }
-glue = glue:new(formatters)
+local filter_functions = { ... }
+local glue = require("glue"):new(filter_functions)
 lustache:render(...)
 ```
 
 ### Example
 
-First, specify some filters:
+#### Regular Example
+
+First, define some filter functions:
 
 ```
-local formatters = {
-      lower = (function(s) return string.lower(s) end),
-      upper = (function(s) return string.upper(s) end),
-      wrap = (function(s, fst, lst) return fst..s..lst end),
+local filter_functions = {
+  date=(function(dt)
+    return os.date("%Y-%m-%d", dt.year, dt.month, dt.day)
+  end),
+  lower = (function(s)
+    return string.lower(s)
+  end),
+  lpad=(function(str, len, delim)
+    if delim == nil then delim = ' ' end
+    return str .. string.rep(delim, len - #str)
+  end),
+  upper = (function(s)
+    return string.upper(s)
+  end),
+  wrap = (function(s, fst, lst)
+    return fst..s..lst
+  end),
+}
+local glue = require("glue"):new(filter_functions)
+```
+
+Then create a template and a view:
+```
+local template = [[
+  {{ name | upper }}
+  {{ birth_date | date }}
+  {{ id | lpad : 10 : '0' }}
+]]
+
+local view = {
+  name = "John Doe",
+  birth_date = { year = 1970, month = 10, day = 11 },
+  id = 1234
 }
 ```
-
-Now, create a template and a view.
-
+Now, just call the renderer as usual:
 ```
-lustache:render("{{ name | upper }}", { name = "john doe"})
+lustache:render(template, view, {})
 ```
 
 The result:
 ```
 JOHN DOE
+1970-10-11
+0000001234
+```
+#### Chaining
+
+We have the following filters and a view:
+```
+local filter_functions = {
+  add=(function(a, b) return a + b end),
+}
+local view = {
+  zero = 0,
+  one = 1
+}
+```
+We can define the following template:
+```
+{{ zero | add: -10 }}
+{{ zero | add: one }}
+{{ zero | add: 1 | add: one | add: 3.14 }}
+```
+
+And the result will be:
+```
+-10
+1
+4.14
+```
+
+#### Strings
+
+We have the following view:
+```
+local view = {
+  first_name = "John",
+  last_name = "Doe"
+}
+```
+
+and filters:
+```
+local filter_functions = {
+  concat=(function(a, b) return a..b end),
+}
+
+```
+
+If we provide the following template:
+```
+{{ first_name | concat: 'ny' }}
+{{ first_name | concat: \"ny\" }}
+{{ first_name | add: ' \"Junior\" ' | add: last_name }}
+{{ first_name | add: \" 'Junior\' \" | add: last_name }}
+
+```
+
+The result will be:
+```
+Johnny
+Johnny
+John &quot;Junior&quot; Doe
+John &#39;Junior&#39; Doe
 ```
