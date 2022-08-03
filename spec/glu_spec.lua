@@ -6,11 +6,11 @@ string.lpad = function(str, len, char)
 end
 --
 describe("mustache extension plugin", function()
-  local lustache, view, formatters, glue
+  local lustache, view, filter_functions, glu
   before_each(function()
     lustache = require("lustache")
     view = { name = "John Doe", age = 10, birth = { year = 1990, month = 9, day = 9 } }
-    fmt = {
+    filter_functions = {
       add=(function(a, b)
         if type(a) == "string" then
           return a .. b
@@ -28,7 +28,7 @@ describe("mustache extension plugin", function()
         return string.lower(s)
       end),
       sum=(function(a, ...)
-        return a and a + fmt.sum(...) or 0
+        return a and a + filter_functions.sum(...) or 0
       end),
       upper=(function(s)
         return string.upper(s)
@@ -37,7 +37,7 @@ describe("mustache extension plugin", function()
         return _beg..s.._end
       end),
     }
-    glue = require("glue"):new(fmt)
+    glu = require("glu"):new(filter_functions)
   end)
   describe("expressions without formatters", function()
     it("shall keep backward compatibility", function()
@@ -48,7 +48,7 @@ describe("mustache extension plugin", function()
   describe("expressions with a single formatter", function()
     it("shall execute the formatter with expression value as parameter", function()
       assert.same(lustache:render("{{ name | upper }}", view, {}), string.upper(view.name))
-      assert.same(lustache:render("{{ birth |date }}", view, {}), fmt["date"](view.birth))
+      assert.same(lustache:render("{{ birth |date }}", view, {}), filter_functions["date"](view.birth))
     end)
   end)
 

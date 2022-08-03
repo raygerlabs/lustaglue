@@ -1,4 +1,4 @@
-# glue
+# glu
 
 An extension plugin for Lustache in order to enable filters in mustache expressions.
 
