@@ -15,8 +15,8 @@ local glu = {
   filters={}
 }
 
---- Specify delimiter types
-local delimiter = {
+--- Filter separators
+local sep = {
   filter = '|',
   param = ':'
 }
@@ -57,8 +57,8 @@ function glu:exec_filter(value, filter, context)
   -- Add data to the parameter table
   -- This is the data we want to transform by filters!
   local params = {value}
-  -- Break up the expression by any parametric delimiter:
-  local tokens = string.split(filter, delimiter.param)
+  -- Break up the expression for filter and parameters:
+  local tokens = string.split(filter, sep.param)
   -- The first parameter should always be the filter itself.
   filter = string.trim(table.remove(tokens, 1))
   
@@ -88,8 +88,8 @@ local _lookup = context.lookup
 --- @param name the template name
 --- @return expression string
 function context.lookup(self, name)
-  -- Break up the expression by any potential filtering delimiter:
-  local tokens = string.split(name, delimiter.filter)
+  -- Break up the expression for any potential filters and mustache expression:
+  local tokens = string.split(name, sep.filter)
   
   -- The first element should always be the original expression.
   -- Call the original lookup function (resolve the data from the context table):
