@@ -140,8 +140,8 @@ If we provide the following template:
 ```
 {{ first_name | concat: 'ny' }}
 {{ first_name | concat: \"ny\" }}
-{{ first_name | add: ' \"Junior\" ' | add: last_name }}
-{{ first_name | add: \" 'Junior\' \" | add: last_name }}
+{{ first_name | concat: ' \"Junior\" ' | concat: last_name }}
+{{ first_name | concat: \" 'Junior\' \" | concat: last_name }}
 ```
 
 The result will be:
