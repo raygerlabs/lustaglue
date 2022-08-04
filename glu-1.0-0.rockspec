@@ -1,7 +1,7 @@
 package = "glu"
 version = "1.0-0"
 source = {
-  url = "https://github.com/raygerlabs/glu.git",
+  url = "git+https://github.com/raygerlabs/glu.git",
   dir = "glu-1.0-0"
 }
 description = {
