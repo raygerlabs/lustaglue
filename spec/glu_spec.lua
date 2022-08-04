@@ -1,115 +1,307 @@
 require "busted.runner"()
---
-string.lpad = function(str, len, char)
-  if char == nil then char = ' ' end
-  return str .. string.rep(char, len - #str)
-end
---
-describe("mustache extension plugin", function()
-  local lustache, view, filter_functions, glu
+
+describe("Mustache extension plugin", function()
+  local l
   before_each(function()
-    lustache = require("lustache")
-    view = { name = "John Doe", age = 10, birth = { year = 1990, month = 9, day = 9 } }
-    filter_functions = {
-      add=(function(a, b)
-        if type(a) == "string" then
-          return a .. b
-        else
-          return a + b
-        end
-      end),
-      date=(function(dt)
-        return os.date("%Y-%m-%d", dt.year, dt.month, dt.day)
-      end),
-      lpad=(function(s, n, c)
-        return string.lpad(s, n, c)
-      end),
-      lower=(function(s)
-        return string.lower(s)
-      end),
-      sum=(function(a, ...)
-        return a and a + filter_functions.sum(...) or 0
-      end),
-      upper=(function(s)
-        return string.upper(s)
-      end),
-      wrap=(function(s, _beg, _end)
-        return _beg..s.._end
-      end),
-    }
-    glu = require("glu"):new(filter_functions)
+    l = require("lustache")
   end)
-  describe("expressions without formatters", function()
+  
+  describe("when called without filters", function()
+    local fmt, gl
+    
+    before_each(function()
+      fmt = {}
+      gl = require("glu"):new(fmt)
+    end)
+    
     it("shall keep backward compatibility", function()
-      assert.same(lustache:render("{{ name }}", view, {}), view.name)
+      local template = "{{ name }}"
+      local view = { name = "John Doe" }
+      local result = l:render(template, view)
+      local expected = view.name
+      assert.same(result, expected)
+    end)
+  end)
+  
+  describe("when called with simple filter and no additional parameters", function()
+    local fmt, gl
+    
+    before_each(function()
+      fmt = {
+        date = function(dt)
+          return os.date("%Y-%m-%d", dt)
+        end,
+        upper = function(s)
+          return s:upper()
+        end,
+      }
+      gl = require("glu"):new(fmt)
+    end)
+    
+    it("shall execute the filter on the resolved string", function()
+      local template = "{{ name | upper }}"
+      local view = { name = "John Doe" }
+      local result = l:render(template, view)
+      local expected = "JOHN DOE"
+      assert.same(result, expected)
+    end)
+
+    it("shall execute the filter on the resolved custom field", function()
+      local template = "{{ registration_date | date }}"
+      local view = { registration_date = os.time{year=2017, month=10, day=11} }
+      local result = l:render(template, view)
+      local expected = "2017-10-11"
+      assert.same(result, expected)
+    end)
+  end)
+  
+  describe("when called with parametric filter and single parameter", function()
+    local fmt, gl
+    
+    before_each(function()
+      fmt = {
+        add = function(x1, x2)
+          return x1 + x2
+        end,
+        concat = function(s1, s2)
+          return s1 .. s2
+        end,
+      }
+      gl = require("glu"):new(fmt)
+    end)
+    
+    it("shall execute the filter with a single numeric parameter", function()
+      local template = "{{ age | add: 10 }}"
+      local view = { age = 10 }
+      local result = l:render(template, view)
+      local expected = "20"
+      assert.same(result, expected)
+    end)
+
+    it("shall execute the filter with a single decimal parameter", function()
+      local template = "{{ age | add: 0.1 }}"
+      local view = { age = 10 }
+      local result = l:render(template, view)
+      local expected = "10.1"
+      assert.same(result, expected)
+    end)
+
+    it("shall execute the filter with a single string parameter", function()
+      local template = "{{ name | concat: ' Doe' }}"
+      local view = { name = "John" }
+      local result = l:render(template, view)
+      local expected = "John Doe"
+      assert.same(result, expected)
     end)
   end)
 
-  describe("expressions with a single formatter", function()
-    it("shall execute the formatter with expression value as parameter", function()
-      assert.same(lustache:render("{{ name | upper }}", view, {}), string.upper(view.name))
-      assert.same(lustache:render("{{ birth |date }}", view, {}), filter_functions["date"](view.birth))
+  describe("when called with parametric filters and multiple parameters", function()
+    local fmt, gl
+    
+    before_each(function()
+      fmt = {
+        sum = function(x, ...)
+          return x and x + fmt.sum(...) or 0
+        end,
+        wrap = function(str, _beg, _end)
+          return _beg .. str .. _end
+        end,
+      }
+      gl = require("glu"):new(fmt)
+    end)
+    
+    it("shall execute the filter with multiple numeric parameters", function()
+      local template = "{{ weight | sum: 1: 2: 3: 4: 5: 6: 7: 8: 9 }}"
+      local view = { weight = 10 }
+      local result = l:render(template, view)
+      local expected = "55"
+      assert.same(result, expected)
+    end)
+
+    it("shall execute the filter with multiple decimal parameters", function()
+      local template = "{{ weight | sum: 0.1: 0.2: 0.3: 0.4: 0.5: 0.6: 0.7: 0.8: 0.9 }}"
+      local view = { weight = 10 }
+      local result = l:render(template, view)
+      local expected = "14.5"
+      assert.same(result, expected)
+    end)
+
+    it("shall execute the filter with multiple string parameters", function()
+      local template = "{{ name | wrap: '$(': ')' }}"
+      local view = { name = "John Doe" }
+      local result = l:render(template, view)
+      local expected = "$(John Doe)"
+      assert.same(result, expected)
     end)
   end)
 
-  describe("expressions with parametric formatters", function()
-    it("shall execute the formatter with an additional string parameter", function()
-      assert.same(lustache:render("{{ name | add : ' welcomes thee!' }}", view, {}), view.name.." welcomes thee!")
+  describe("when called with filter chaining", function()
+    local fmt, gl
+    
+    before_each(function()
+      fmt = {
+        add = function(x1, x2)
+          return x1 + x2
+        end,
+        concat = function(s1, s2)
+          return s1 .. s2
+        end,
+        lower = function(s)
+          return s:lower()
+        end,
+        lpad = function(str, len, delim)
+          delim = delim or ' '
+          return string.rep(delim, len - #str) .. str
+        end,
+        rpad = function(str, len, delim)
+          delim = delim or ' '
+          return str .. string.rep(delim, len - #str)
+        end,
+        sum = function(x, ...)
+          return x and x + fmt.sum(...) or 0
+        end,
+        upper = function(s)
+          return s:upper()
+        end,
+        wrap = function(str, _beg, _end)
+          return _beg .. str .. _end
+        end,
+      }
+      gl = require("glu"):new(fmt)
     end)
-    it("shall execute the formatter with an additional numeric parameter", function()
-      assert.same(lustache:render("{{ name | lpad : 10 }}", view, {}), string.lpad(view.name, 10))
+    
+    it("shall execute the filters in order", function()
+      local template = "{{ name | upper | lower }}"
+      local view = { name = "John Doe" }
+      local result = l:render(template, view)
+      local expected = "john doe"
+      assert.same(result, expected)
     end)
-    it("shall execute the formatter with an additional decimal parameter", function()
-      assert.same(lustache:render("{{ age | add: 0.5 }}", view, {}), "10.5")
+    
+    it("shall support parametric filters", function()
+      local template = "{{ name | lpad: 10: '*' | rpad: 20: '#' }}"
+      local view = { name = "John Doe" }
+      local result = l:render(template, view)
+      local expected = "**John Doe##########"
+      assert.same(result, expected)
     end)
-    it("shall execute the formatter with multiple additional string parameter", function()
-      assert.same(lustache:render("{{ name | wrap : '${' : '}' }}", view, {}), "${"..view.name.."}")
-    end)
-    it("shall execute the formatter with multiple additional numeric parameter", function()
-      assert.same(lustache:render("{{ age | sum : 1 : 2: 3 : 4 : 5 : 6 : 7 : 8 : 9 }}", view, {}), "55")
-    end)
-    it("shall execute the formatter with multiple additional decimal parameter", function()
-      assert.same(lustache:render("{{ age | sum : 0.1 : 0.2: 0.3 : 0.4 : 0.5 : 0.6 : 0.7 : 0.8 : 0.9 }}", view, {}), "14.5")
+    
+    it("shall support multiple parametric filters", function()
+      local template = "{{ weight | add: 1 | add: 2 | add: 3 | add: 4 | add: 5 | add: 6 | add: 7 | add: 8 | add: 9 }}"
+      local view = { weight = 10 }
+      local result = l:render(template, view)
+      local expected = "55"
+      assert.same(result, expected)
     end)
   end)
 
-  describe("expressions with chained formatters", function()
-    it("shall execute the formatters in order", function()
-      assert.same(lustache:render("{{ name | lower | upper }}", view), string.upper(view.name))
+  describe("when called with such parametric filters that has signed/unsigned parameters", function()
+    local fmt, gl
+    
+    before_each(function()
+      fmt = {
+        add = function(x1, x2)
+          return x1 + x2
+        end,
+      }
+      gl = require("glu"):new(fmt)
     end)
-    it("shall support parametric formatters", function()
-      assert.same(lustache:render("{{ name | lpad:10:'*' | lpad:20:'#' }}", view), string.lpad(string.lpad(view.name, 10, '*'), 20, '#'))
+    
+    it("shall evaluate numerical expressions", function()
+      assert.same("11", l:render("{{ x | add: 1 }}", { x = 10 }))
+      assert.same("11", l:render("{{ x | add: +1 }}", { x = 10 }))
+      assert.same("9", l:render("{{ x | add: -1 }}", { x = 10 }))
     end)
-    it("shall support many parametric formatters", function()
-      assert.same(lustache:render("{{ age | add:1 | add:2 | add:3 | add:4 | add:5 | add:6 | add:7 | add:8 | add:9 }}", view), "55")
+
+    it("shall evaluate decimal expressions", function()
+      assert.same("10.1", l:render("{{ x | add: 0.1 }}", { x = 10 }))
+      assert.same("10.1", l:render("{{ x | add: +0.1 }}", { x = 10 }))
+      assert.same("9.9", l:render("{{ x | add: -0.1 }}", { x = 10 }))
     end)
   end)
 
-  describe("parametric formatter types", function()
-    local view
-    setup(function()
-      view = { firstname="John", lastname="Doe", zero=0, pi=3.141593  }
+  describe("when called with such parametric filters that has nested expressions", function()
+    local fmt, gl
+    
+    before_each(function()
+      fmt = {
+        add = function(x1, x2)
+          return x1 + x2
+        end,
+        concat = function(s1, s2)
+          return s1 .. s2
+        end,
+      }
+      gl = require("glu"):new(fmt)
     end)
-    it("shall allow numeric parameter", function()
-      assert.same(lustache:render("{{ zero | add: 1 }}", view), '1')
-      assert.same(lustache:render("{{ zero | add: +1 }}", view), '1')
-      assert.same(lustache:render("{{ zero | add: -1 }}", view), '-1')
+    
+    it("shall evaluate numerical expression", function()
+      local template = "{{ zero | add: one }}"
+      local view = { zero = 0, one = 1 }
+      local result = l:render(template, view)
+      local expected = "1"
+      assert.same(result, expected)
     end)
-    it("shall allow decimal parameter", function()
-      assert.same(lustache:render("{{ zero | add: 0.1 }}", view), '0.1')
-      assert.same(lustache:render("{{ zero | add: +0.1 }}", view), '0.1')
-      assert.same(lustache:render("{{ zero | add: -0.1 }}", view), '-0.1')
+
+    it("shall evaluate strings", function()
+      local template = "{{ firstname | concat: lastname }}"
+      local view = { firstname = "John", lastname = "Doe" }
+      local result = l:render(template, view)
+      local expected = "JohnDoe"
+      assert.same(result, expected)
     end)
-    it("shall allow other expressions as parameters", function()
-      assert.same(lustache:render("{{ zero | add: pi }}", view, {}), ""..view.pi)
-      assert.same(lustache:render("{{ firstname | add: lastname }}", view), view.firstname..view.lastname)
+
+    it("shall evaluate complex numerical expressions", function()
+      local template = "{{ weight | add: -10 | add: pi | add: -3 }}"
+      local view = { weight = 10, pi = 3.14 }
+      local result = l:render(template, view)
+      local expected = "0.14"
+      assert.same(result, expected)
     end)
-    it("shall allow quoted string parameters", function()
-      assert.same(lustache:render("{{ firstname | add: 'ny' }}", view), 'Johnny')
-      assert.same(lustache:render("{{ firstname | add: \"ny\" }}", view), 'Johnny')
-      -- Lustache renders text with HTML escape characters by default
-      assert.same(lustache:render("{{ firstname | add: ' \"Junior\" ' | add: lastname }}", view), 'John &quot;Junior&quot; Doe')
-      assert.same(lustache:render("{{ firstname | add: \" 'Junior\' \" | add: lastname }}", view), "John &#39;Junior&#39; Doe")
+  end)
+
+  describe("when called with such parametric filters that contains quoted string parameters", function()
+    local fmt, gl
+    
+    before_each(function()
+      fmt = {
+        concat = function(s1, s2)
+          return s1 .. s2
+        end,
+      }
+      gl = require("glu"):new(fmt)
+    end)
+    
+    it("shall allow single quotes", function()
+      local template = "{{ name | concat: 'ny' }}"
+      local view = { name = "John" }
+      local result = l:render(template, view)
+      local expected = "Johnny"
+      assert.same(result, expected)
+    end)
+
+    it("shall allow double quotes", function()
+      local template = "{{ name | concat: \"ny\" }}"
+      local view = { name = "John" }
+      local result = l:render(template, view)
+      local expected = "Johnny"
+      assert.same(result, expected)
+    end)
+
+    it("shall internal single quotes are converted into html escaped tags", function()
+      local template = "{{ firstname | concat: ' \"Junior\" ' | concat: lastname }}"
+      local view = { firstname = "John", lastname = "Doe" }
+      local result = l:render(template, view)
+      local expected = "John &quot;Junior&quot; Doe"
+      assert.same(result, expected)
+    end)
+
+    it("shall internal double quotes are converted into html escaped tags", function()
+      local template = "{{ firstname | concat: \" 'Junior\' \" | concat: lastname }}"
+      local view = { firstname = "John", lastname = "Doe" }
+      local result = l:render(template, view)
+      local expected = "John &#39;Junior&#39; Doe"
+      assert.same(result, expected)
     end)
   end)
 

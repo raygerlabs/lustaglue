@@ -1,77 +1,117 @@
--- file: glu.lua
---
--- Remove the trailing spaces from the specified string
---
-string.trim = function(s)
-  return s:match('^%s*(.*%S)') or ''
+--- file: glu.lua
+
+--- Trim trailing whitespaces from a specific string.
+--- @param s string
+--- @return expression string
+function string.trim(s)
+  assert(type(s) == "string", "string type expected for argument 's'")
+  return s:match("^%s*(.*%S)") or ''
 end
---
-local glu = {filters={}}
---
--- Process the parameters in the filter expression:
--- {{ value | filter : param1 : param2 : param3 }}
---
+
+--- @class glu
+local glu = {
+  _VERSION = "1.0",
+  _NAME = "glu",
+  filters={}
+}
+
+--- Specify delimiter types
+local delimiter = {
+  filter = '|',
+  param = ':'
+}
+
+--- Process parametric expression in a filter, such as:
+--- {{ value | filter : param1 : param2 : param3 }}
+--- @param param string
+--- @param context table
+--- @return expression string
 function glu:parse_param(param, context)
+  -- For determining the type of the expression within the string:
   local stringExp = "^[\'\"](.*)[\'\"]$"
   local numericExp = "^[+-]?%d+$"
   local decimalExp = "^[+-]?%d%.%d+$"
-  if param:match(stringExp)
-  then
+
+  -- Remove opening and closing quotes from the parameter expression when it's a string
+  if param:match(stringExp) then
     return param:gsub(stringExp, "%1")
   end
-  if param:match(decimalExp)
-  then
+  
+  -- Convert to number when it's a number
+  if param:match(decimalExp) or param:match(numericExp) then
     return tonumber(param)
   end
-  if param:match(numericExp)
-  then
-    return tonumber(param)
-  end
+  
+  -- None of the above
+  -- Search in the context table...
   return context:lookup(param)
 end
---
--- Resolve filter# in a mustache expression:
--- {{ value | filter1 | filter2 | .. | filterN }}
---
-function glu:exec_filter(expression, filter, context)
-  local params = {expression}
-  local tokens = string.split(filter, ":")
-  local filter_name = string.trim(table.remove(tokens, 1)) -- The first element is always the filter!
-  for _, token in ipairs(tokens) do -- Assemble the parameter list
-    token = string.trim(token)
-    token = self:parse_param(token, context)
-    table.insert(params, token)
+
+--- Resolve filter# in a mustache expression:
+--- {{ value | filter1 | filter2 | .. | filterN }}
+--- @param value the element from the context table
+--- @param filter the expression string
+--- @param context table
+--- @return expression string
+function glu:exec_filter(value, filter, context)
+  -- Add data to the parameter table
+  -- This is the data we want to transform by filters!
+  local params = {value}
+  -- Break up the expression by any parametric delimiter:
+  local tokens = string.split(filter, delimiter.param)
+  -- The first parameter should always be the filter itself.
+  filter = string.trim(table.remove(tokens, 1))
+  
+  -- Resolve the filter
+  local callback = self.filters[filter]
+  if callback then
+    -- OK - Let's generate the parameter list
+    for _, token in ipairs(tokens) do
+      token = self:parse_param(string.trim(token), context)
+      table.insert(params, token)
+    end
+    -- Call the filter
+    value = callback(table.unpack(params))
   end
-  if self.filters[filter_name] ~= nil -- Check whether the specified filter exists or not
-  then
-    filter = self.filters[filter_name]
-    expression = filter(table.unpack(params)) -- Call the filter
-  end
-  return expression
+
+  return value
 end
---
--- Override lookup function in the context
---
+
+--- Override lookup function in the context
 local context = require "lustache.context"
+
+--- Local copy of the lookup function in Lustache context
 local _lookup = context.lookup
+
+--- Search the cache for a specific entry.
+--- @param self the reference of context
+--- @param name the template name
+--- @return expression string
 function context.lookup(self, name)
-  local tokens = string.split(name, "|")
-  local expression = table.remove(tokens, 1)  -- The first element is always the mustache expression!
-  expression = string.trim(expression)
-  expression = _lookup(self, expression) -- Search the cache in the context
-  for _, token in ipairs(tokens) do -- Apply filters
-    expression = glu:exec_filter(expression, token, self)
+  -- Break up the expression by any potential filtering delimiter:
+  local tokens = string.split(name, delimiter.filter)
+  
+  -- The first element should always be the original expression.
+  -- Call the original lookup function (resolve the data from the context table):
+  local expression = string.trim(table.remove(tokens, 1))
+  local value = _lookup(self, expression)
+
+  -- Transform the value by the given filter (if any)
+  for _, token in ipairs(tokens) do
+    value = glu:exec_filter(value, token, self)
   end
-  return expression
+
+  return value
 end
---
--- Construct the extension plugin
---
+
+--- Construct the extension plugin.
+--- @param filters table
+--- @return glu extension table
 function glu:new(filters)
   local instance = {}
   setmetatable(instance, {__index=self})
   self.filters = filters
   return instance
 end
---
+
 return glu
