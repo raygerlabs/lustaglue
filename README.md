@@ -6,7 +6,24 @@
 
 An extension plugin for Lustache in order to enable filters in mustache expressions.
 
-### Filters
+## Installation
+
+Using luarocks:
+
+```
+ luarocks install glu
+```
+
+Or from source:
+```
+git clone https://github.com/raygerlabs/glu
+cd glu
+luarocks make
+```
+
+## Usage
+
+### Definitions
 
 A filter is such an expression that alters the output of the rendering function. A filter can defined using the following syntax:
 ```
@@ -23,120 +40,141 @@ A filter may have parameters. The syntax:
 {{ variable | filter : param1 : param2 : ... : paramN }}
 ```
 
-### Usage
+### Workflow
 
 ```
 local lustache = require "lustache"
-local filter_functions = { ... }
-local glu = require("glu"):new(filter_functions)
-lustache:render(...)
+
+local filters = {...}
+local glu = require("glu"):new(filters)
+
+local template = {...}
+local view = {...}
+
+lustache:render(template, view)
 ```
 
-### Examples
+## Examples
 
-First, define some filter functions:
+### Simple filters
 
+Given the following filter and view:
 ```
-local filter_functions = {
-
-  date=(function(dt)
-    return os.date("%Y-%m-%d", dt.year, dt.month, dt.day)
-  end),
-
-  lower = (function(s)
-    return string.lower(s)
-  end),
-
-  lpad=(function(str, len, delim)
-    if delim == nil then delim = ' ' end
-    return str .. string.rep(delim, len - #str)
-  end),
-
+local filters = {
   upper = (function(s)
     return string.upper(s)
   end),
-
-  wrap = (function(s, fst, lst)
-    return fst..s..lst
-  end),
 }
-local glu = require("glu"):new(filter_functions)
+local view = { name = "John Doe" }
 ```
 
-Then create a template and a view:
+The template
 ```
-local template = [[
-  {{ name | upper }}
-  {{ birth_date | date }}
-  {{ id | lpad : 10 : '0' }}
-]]
-
-local view = {
-  name = "John Doe",
-  birth_date = { year = 1970, month = 10, day = 11 },
-  id = 1234
-}
-```
-Now, just call the renderer as usual:
-```
-lustache:render(template, view, {})
+{{ name | upper }}
 ```
 
-The result:
+shall produce:
 ```
 JOHN DOE
-1970-10-11
-0000001234
 ```
-#### Filter chaining
 
-We have the following filters and a view:
+### Parametric filters
+
+Given the following filter and view:
 ```
-local filter_functions = {
+local filters = {
   add=(function(a, b)
     return a + b
   end) 
 }
-
 local view = {
-  zero = 0,
-  one = 1
+  ten = 10
 }
 ```
-We can define the following template:
+The template
 ```
-{{ zero | add: -10 }}
-{{ zero | add: one }}
-{{ zero | add: 1 | add: one | add: 3.14 }}
+{{ ten | add: 10 }}
+```
+shall produce
+```
+20
+```
+
+### Expression as parameters
+
+Given the following filter and view:
+```
+local filters = {
+  add=(function(a, b)
+    return a + b
+  end) 
+}
+local view = {
+  ten = 10,
+  twenty = 20
+}
+```
+The template
+```
+{{ ten | add: twenty }}
+```
+shall produce
+```
+30
+```
+
+### Filter chaining
+
+The filter functions are chainable. Given the following filter and view:
+```
+local filters = {
+  add=(function(a, b)
+    return a + b
+  end),
+  sum=(function(x, ...)
+    return x and x + filters.sum(...) or 0
+  end)
+}
+local view = {
+  ten = 10,
+  twenty = 20
+}
+```
+
+With the following template:
+```
+{{ ten | add: -10 }}
+{{ ten | add: twenty }}
+{{ ten | add: ten | add: twenty | add: 30 | add: 40 | add: 50 }}
+{{ ten | sum: 10: 20: 30: 40: 50 }}
 ```
 
 And the result will be:
+
 ```
--10
-1
-4.14
+0
+30
+80
+160
+160
 ```
 
-#### Text formatting filters
+### Quotes
 
-We have the following view:
-```
-local view = {
-  first_name = "John",
-  last_name = "Doe"
-}
-```
-
-and filters:
+Given the following filter and view:
 ```
 local filter_functions = {
   concat=(function(a, b)
     return a..b
   end)
 }
+local view = {
+  first_name = "John",
+  last_name = "Doe"
+}
 ```
 
-If we provide the following template:
+The template:
 ```
 {{ first_name | concat: 'ny' }}
 {{ first_name | concat: \"ny\" }}
@@ -144,7 +182,7 @@ If we provide the following template:
 {{ first_name | concat: \" 'Junior\' \" | concat: last_name }}
 ```
 
-The result will be:
+shall produce:
 ```
 Johnny
 Johnny
