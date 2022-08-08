@@ -4,7 +4,10 @@
 
 # glu
 
-An extension plugin for Lustache in order to enable filters in mustache expressions.
+An extension plugin for mustache Lua library in order to enable custom formatters in mustache expressions such as
+```
+{{ variable | filter1 | filter2 | ... | filterN }} 
+```
 
 ## Installation
 
