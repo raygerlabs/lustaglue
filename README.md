@@ -24,6 +24,9 @@ cd glu
 luarocks make
 ```
 
+See the luarock here:
+https://luarocks.org/modules/raygerlabs/glu
+
 ## Usage
 
 ### Definitions
