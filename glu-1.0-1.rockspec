@@ -1,7 +1,7 @@
 rockspec_format = "3.0"
 
 package = "glu"
-version = "1.0-0"
+version = "1.0-1"
 
 source = {
   url = "git+https://github.com/raygerlabs/glu.git",
