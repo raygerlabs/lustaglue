@@ -5,7 +5,7 @@ version = "1.0-1"
 
 source = {
   url = "git+https://github.com/raygerlabs/lustaglue.git",
-  tag = "1.0-1"
+  tag = "v1.0-1"
 }
 
 description = {
