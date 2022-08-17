@@ -4,6 +4,6 @@ return {
   },
   default = {
     verbose = true,
-    lpath = "./src/?.lua;./src/?/glu.lua"
+    lpath = "./src/?.lua;./src/?/lustaglue.lua"
   }
 }

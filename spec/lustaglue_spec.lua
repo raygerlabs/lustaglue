@@ -11,7 +11,7 @@ describe("Mustache extension plugin", function()
     
     before_each(function()
       fmt = {}
-      gl = require("glu"):new(fmt)
+      gl = require("lustaglue"):new(fmt)
     end)
     
     it("shall keep backward compatibility", function()
@@ -35,7 +35,7 @@ describe("Mustache extension plugin", function()
           return s:upper()
         end,
       }
-      gl = require("glu"):new(fmt)
+      gl = require("lustaglue"):new(fmt)
     end)
     
     it("shall execute the filter on the resolved string", function()
@@ -67,7 +67,7 @@ describe("Mustache extension plugin", function()
           return s1 .. s2
         end,
       }
-      gl = require("glu"):new(fmt)
+      gl = require("lustaglue"):new(fmt)
     end)
     
     it("shall execute the filter with a single numeric parameter", function()
@@ -107,7 +107,7 @@ describe("Mustache extension plugin", function()
           return _beg .. str .. _end
         end,
       }
-      gl = require("glu"):new(fmt)
+      gl = require("lustaglue"):new(fmt)
     end)
     
     it("shall execute the filter with multiple numeric parameters", function()
@@ -167,7 +167,7 @@ describe("Mustache extension plugin", function()
           return _beg .. str .. _end
         end,
       }
-      gl = require("glu"):new(fmt)
+      gl = require("lustaglue"):new(fmt)
     end)
     
     it("shall execute the filters in order", function()
@@ -204,7 +204,7 @@ describe("Mustache extension plugin", function()
           return x1 + x2
         end,
       }
-      gl = require("glu"):new(fmt)
+      gl = require("lustaglue"):new(fmt)
     end)
     
     it("shall evaluate numerical expressions", function()
@@ -232,7 +232,7 @@ describe("Mustache extension plugin", function()
           return s1 .. s2
         end,
       }
-      gl = require("glu"):new(fmt)
+      gl = require("lustaglue"):new(fmt)
     end)
     
     it("shall evaluate numerical expression", function()
@@ -269,7 +269,7 @@ describe("Mustache extension plugin", function()
           return s1 .. s2
         end,
       }
-      gl = require("glu"):new(fmt)
+      gl = require("lustaglue"):new(fmt)
     end)
     
     it("shall allow single quotes", function()

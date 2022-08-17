@@ -1,4 +1,4 @@
---- file: glu.lua
+--- file: lustaglue.lua
 
 --- Trim trailing whitespaces from a specific string.
 --- @param s string
@@ -8,10 +8,10 @@ function string.trim(s)
   return s:match("^%s*(.*%S)") or ''
 end
 
---- @class glu
-local glu = {
-  _VERSION = "1.0",
-  _NAME = "glu",
+--- @class lustaglue
+local lustaglue = {
+  _VERSION = "1.0-0",
+  _NAME = "lustaglue",
   filters={}
 }
 
@@ -26,7 +26,7 @@ local sep = {
 --- @param param string
 --- @param context table
 --- @return expression string
-function glu:parse_param(param, context)
+function lustaglue:parse_param(param, context)
   -- For determining the type of the expression within the string:
   local stringExp = "^[\'\"](.*)[\'\"]$"
   local numericExp = "^[+-]?%d+$"
@@ -53,7 +53,7 @@ end
 --- @param filter the expression string
 --- @param context table
 --- @return expression string
-function glu:exec_filter(value, filter, context)
+function lustaglue:exec_filter(value, filter, context)
   -- Add data to the parameter table
   -- This is the data we want to transform by filters!
   local params = {value}
@@ -98,7 +98,7 @@ function context.lookup(self, name)
 
   -- Transform the value by the given filter (if any)
   for _, token in ipairs(tokens) do
-    value = glu:exec_filter(value, token, self)
+    value = lustaglue:exec_filter(value, token, self)
   end
 
   return value
@@ -106,12 +106,12 @@ end
 
 --- Construct the extension plugin.
 --- @param filters table
---- @return glu extension table
-function glu:new(filters)
+--- @return lustaglue extension table
+function lustaglue:new(filters)
   local instance = {}
   setmetatable(instance, {__index=self})
   self.filters = filters
   return instance
 end
 
-return glu
+return lustaglue

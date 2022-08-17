@@ -1,10 +1,10 @@
-[![build](https://github.com/raygerlabs/glu/actions/workflows/build.yaml/badge.svg)](https://github.com/raygerlabs/glu/actions/workflows/build.yaml)
+[![build](https://github.com/raygerlabs/lustaglue/actions/workflows/build.yaml/badge.svg)](https://github.com/raygerlabs/lustaglue/actions/workflows/build.yaml)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
-[![coverage](https://coveralls.io/repos/github/raygerlabs/glu/badge.svg)](https://coveralls.io/github/raygerlabs/glu)
+[![coverage](https://coveralls.io/repos/github/raygerlabs/lustaglue/badge.svg)](https://coveralls.io/github/raygerlabs/lustaglue)
 
-# glu
+# lustaglue
 
-An extension plugin for mustache Lua library in order to enable custom formatters in mustache expressions such as
+An extension plugin for Lustache in order to enable custom filters or formatters in expressions such as
 ```
 {{ variable | filter1 | filter2 | ... | filterN }} 
 ```
@@ -14,18 +14,18 @@ An extension plugin for mustache Lua library in order to enable custom formatter
 Using luarocks:
 
 ```
- luarocks install glu
+ luarocks install lustaglue
 ```
 
 Or from source:
 ```
-git clone https://github.com/raygerlabs/glu
-cd glu
+git clone https://github.com/raygerlabs/lustaglue
+cd lustaglue
 luarocks make
 ```
 
 See the luarock here:
-https://luarocks.org/modules/raygerlabs/glu
+https://luarocks.org/modules/raygerlabs/lustaglue
 
 ## Usage
 
@@ -52,7 +52,7 @@ A filter may have parameters. The syntax:
 local lustache = require "lustache"
 
 local filters = {...}
-local glu = require("glu"):new(filters)
+local lustaglue = require("lustaglue"):new(filters)
 
 local template = {...}
 local view = {...}
