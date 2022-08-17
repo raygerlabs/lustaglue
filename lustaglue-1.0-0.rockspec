@@ -30,6 +30,6 @@ test = {
 build = {
   type = "builtin",
   modules = {
-    glu = "src/lustaglue.lua"
+    lustaglue = "src/lustaglue.lua"
   }
 }
