@@ -4,7 +4,7 @@
 
 # lustaglue
 
-An extension plugin for Lustache in order to enable custom filters or formatters in expressions such as
+An extension plugin for Lustache in order to enable custom formatters in expressions such as
 ```
 {{ variable | filter1 | filter2 | ... | filterN }} 
 ```
@@ -41,7 +41,7 @@ A filter can be applied on the result of another filter such as:
 {{ variable | filter1 | filter2 | ... | filterN }}
 ```
 
-A filter may have parameters. The syntax:
+A filter that has parameters called parametric filter. The syntax is the following:
 ```
 {{ variable | filter : param1 : param2 : ... : paramN }}
 ```
