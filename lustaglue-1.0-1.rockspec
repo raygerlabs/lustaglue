@@ -1,11 +1,11 @@
 rockspec_format = "3.0"
 
 package = "lustaglue"
-version = "1.0-0"
+version = "1.0-1"
 
 source = {
   url = "git+https://github.com/raygerlabs/lustaglue.git",
-  branch = "main"
+  tag = "1.0-1"
 }
 
 description = {
